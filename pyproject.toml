@@ -1,0 +1,17 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "genbooster"
+version = "0.1.0"
+description = "A fast boosting implementation using Rust and Python"
+requires-python = ">=3.7"
+dependencies = [
+    "numpy>=1.20.0",
+    "scikit-learn>=1.0.0",
+]
+
+[tool.maturin]
+python-source = "src"
+module-name = "genbooster.rust_core"

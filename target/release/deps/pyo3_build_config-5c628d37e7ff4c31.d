@@ -1,0 +1,13 @@
+/Users/t/Documents/Python_Packages/genbooster/target/release/deps/libpyo3_build_config-5c628d37e7ff4c31.rmeta: /Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/lib.rs /Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/errors.rs /Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/impl_.rs /Users/t/Documents/Python_Packages/genbooster/target/release/build/pyo3-build-config-a252d0ee512adb96/out/pyo3-build-config-file.txt /Users/t/Documents/Python_Packages/genbooster/target/release/build/pyo3-build-config-a252d0ee512adb96/out/pyo3-build-config.txt
+
+/Users/t/Documents/Python_Packages/genbooster/target/release/deps/libpyo3_build_config-5c628d37e7ff4c31.rlib: /Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/lib.rs /Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/errors.rs /Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/impl_.rs /Users/t/Documents/Python_Packages/genbooster/target/release/build/pyo3-build-config-a252d0ee512adb96/out/pyo3-build-config-file.txt /Users/t/Documents/Python_Packages/genbooster/target/release/build/pyo3-build-config-a252d0ee512adb96/out/pyo3-build-config.txt
+
+/Users/t/Documents/Python_Packages/genbooster/target/release/deps/pyo3_build_config-5c628d37e7ff4c31.d: /Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/lib.rs /Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/errors.rs /Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/impl_.rs /Users/t/Documents/Python_Packages/genbooster/target/release/build/pyo3-build-config-a252d0ee512adb96/out/pyo3-build-config-file.txt /Users/t/Documents/Python_Packages/genbooster/target/release/build/pyo3-build-config-a252d0ee512adb96/out/pyo3-build-config.txt
+
+/Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/lib.rs:
+/Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/errors.rs:
+/Users/t/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pyo3-build-config-0.19.2/src/impl_.rs:
+/Users/t/Documents/Python_Packages/genbooster/target/release/build/pyo3-build-config-a252d0ee512adb96/out/pyo3-build-config-file.txt:
+/Users/t/Documents/Python_Packages/genbooster/target/release/build/pyo3-build-config-a252d0ee512adb96/out/pyo3-build-config.txt:
+
+# env-dep:OUT_DIR=/Users/t/Documents/Python_Packages/genbooster/target/release/build/pyo3-build-config-a252d0ee512adb96/out
