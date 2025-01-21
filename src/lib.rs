@@ -145,12 +145,19 @@ impl RustBooster {
                     *val /= 1.0 - dropout;
                 }
             }
-        }        
-        // Concatenate with original features if direct_link is true
+        }
+        
+        // If direct_link is true, concatenate x and hidden horizontally
+        // This will create a matrix with:
+        // - Same number of rows as input
+        // - Columns = original features + hidden features
         if self.direct_link {
-            let mut combined = Array2::zeros((x.shape()[0], x.shape()[1] + hidden.shape()[1]));
-            combined.slice_mut(s![.., ..x.shape()[1]]).assign(x);
-            combined.slice_mut(s![.., x.shape()[1]..]).assign(&hidden);
+            let mut combined = Array2::zeros((
+                x.shape()[0],                    // number of samples (rows)
+                x.shape()[1] + hidden.shape()[1] // original features + hidden features (columns)
+            ));
+            combined.slice_mut(s![.., ..x.shape()[1]]).assign(x);        // First part: original features
+            combined.slice_mut(s![.., x.shape()[1]..]).assign(&hidden); // Second part: hidden features
             Ok(combined)
         } else {
             Ok(hidden)

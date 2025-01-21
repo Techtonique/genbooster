@@ -17,7 +17,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,
                                                     random_state=42)
 
 # Test different learning rates
-learning_rates = 10**np.linspace(-6, -1, 10)
+learning_rates = 10**np.linspace(-6, -0.5, 10)
 n_estimators_list = np.linspace(100, 1000, 10)
 rmses_train = [[] for _ in range(len(n_estimators_list))]
 rmses_test = [[] for _ in range(len(n_estimators_list))]
