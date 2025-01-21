@@ -16,6 +16,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.8', '3.9', '3.10', '3.11']
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: x86_64-apple-darwin
 
     steps:
       - uses: actions/checkout@v3
@@ -31,7 +38,7 @@ jobs:
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
-          target: auto
+          target: ${{ matrix.target }}
           args: --release --out dist
 
       - name: Upload wheels
@@ -54,4 +61,4 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.PYPI_GLOBAL_GENBOOSTER }}
+          password: ${{ secrets.PYPI_GLOBAL }}
