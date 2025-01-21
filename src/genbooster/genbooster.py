@@ -8,7 +8,24 @@ from sklearn.linear_model import Ridge
 from .rust_core import RustBooster as _RustBooster
 
 class BoosterRegressor(BaseEstimator, RegressorMixin):
-    """A scikit-learn compatible wrapper for the Rust-based booster."""
+    """Generic Gradient Boosting Regressor (for any base learner).
+
+        Parameters:
+
+            base_estimator: Base learner to use for the booster.
+            n_estimators: Number of boosting stages to perform.
+            learning_rate: Learning rate shrinks the contribution of each estimator.
+            n_hidden_features: Number of hidden features to use for the base learner.
+            direct_link: Whether to use direct link for the base learner or not.
+            weights_distribution: Distribution of the weights for the booster (uniform or normal).
+            dropout: Dropout rate.
+            random_state: Random state.
+
+        Attributes:
+            booster_: The booster model.
+            y_mean_: The mean of the target variable.
+                    
+    """
     
     def __init__(
         self,
@@ -33,7 +50,15 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         self.y_mean_ = None
 
     def fit(self, X, y) -> "BoosterRegressor":
-        """Fit the booster model."""        
+        """Fit the booster model.
+        
+        Parameters:
+            X: Input data.
+            y: Target data.
+            
+        Returns:
+            self: The fitted booster model.
+        """        
         if isinstance(X, pd.DataFrame):
             X = X.values
         if isinstance(y, pd.DataFrame):
@@ -65,14 +90,40 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         return self
         
     def predict(self, X) -> np.ndarray:
-        """Make predictions with the booster model."""
+        """Make predictions with the booster model.
+
+        Parameters:
+            X: Input data.
+            
+        Returns:
+            preds: Predictions.
+        """
         if isinstance(X, pd.DataFrame):
             X = X.values
         scaled_X = self.scaler_.transform(X)
         return self.booster_.predict(scaled_X) + self.y_mean_
 
 class BoosterClassifier(BaseEstimator, ClassifierMixin):
-    """A scikit-learn compatible wrapper for the Rust-based booster."""
+    """Generic Gradient Boosting Classifier (for any base learner).
+
+    Parameters:
+        base_estimator: Base learner to use for the booster.
+        n_estimators: Number of boosting stages to perform.
+        learning_rate: Learning rate shrinks the contribution of each estimator.
+        n_hidden_features: Number of hidden features to use for the base learner.
+        direct_link: Whether to use direct link for the base learner or not.
+        weights_distribution: Distribution of the weights for the booster (uniform or normal).
+        dropout: Dropout rate.
+        random_state: Random state.
+    
+    Attributes:
+        booster_: The booster model.
+        classes_: The classes of the target variable.
+        n_classes_: The number of classes of the target variable.
+        y_mean_: The mean of the target variable.
+        boosters_: The boosters of the model.
+
+    """
     
     def __init__(self,
                 base_estimator: Optional[BaseEstimator] = None,
@@ -98,7 +149,15 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
         self.boosters_ = None 
     
     def fit(self, X, y) -> "BoosterClassifier":
-        """Fit the booster model."""
+        """Fit the booster model.
+        
+        Parameters:
+            X: Input data.
+            y: Target data.
+            
+        Returns:
+            self: The fitted booster model.
+        """
         if isinstance(X, pd.DataFrame):
             X = X.values
         if isinstance(y, pd.DataFrame):
@@ -120,19 +179,32 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
                 weights_distribution=self.weights_distribution
             )
             booster.fit(X, Y[:, i], dropout=self.dropout, seed=self.random_state)
-            self.boosters_.append(booster)
-            
+            self.boosters_.append(booster)            
         return self
     
     def predict(self, X) -> np.ndarray:
-        """Make predictions with the booster model."""
+        """Make predictions with the booster model.
+        
+        Parameters:
+            X: Input data.
+            
+        Returns:
+            preds: Class predictions.
+        """
         if isinstance(X, pd.DataFrame):
             X = X.values       
         preds_proba = self.predict_proba(X)
         return np.argmax(preds_proba, axis=0)
 
     def predict_proba(self, X) -> np.ndarray:
-        """Make probability predictions with the booster model."""
+        """Make probability predictions with the booster model.
+        
+        Parameters:
+            X: Input data.
+            
+        Returns:
+            preds: Probability predictions.
+        """
         if isinstance(X, pd.DataFrame):
             X = X.values
         raw_preds = np.asarray([booster.predict(X) for booster in self.boosters_])

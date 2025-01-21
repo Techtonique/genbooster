@@ -24,7 +24,6 @@ for dataset, dataset_name in zip(datasets, datasets_names):
             clf = BoosterClassifier(base_estimator=estimator[1](), n_hidden_features=10)
             clf.fit(X_train, y_train)
             preds = clf.predict(X_test)
-            print(np.mean(preds == y_test))
             accuracy_scores.append((dataset_name, estimator[0], np.mean(preds == y_test)))
         except Exception as e:
             print(e)
