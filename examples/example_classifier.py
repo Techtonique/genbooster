@@ -14,7 +14,8 @@ from sklearn.utils.discovery import all_estimators
 
 X, y = load_iris(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-clf = BoosterClassifier(base_estimator=Ridge(), n_hidden_features=10)
+clf = BoosterClassifier(base_estimator=ExtraTreeRegressor(), 
+                        n_hidden_features=10)
 clf.fit(X_train, y_train)
 preds = clf.predict(X_test)
 print(np.mean(preds == y_test))
