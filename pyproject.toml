@@ -19,7 +19,7 @@ dependencies = [
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Rust",
-    "License :: OSI Approved :: BSD3 Clear",
+    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
 ]
 readme = "README.md"
