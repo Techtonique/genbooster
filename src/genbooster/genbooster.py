@@ -1,6 +1,9 @@
 from typing import Optional, Union
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Ridge
 from .rust_core import RustBooster as _RustBooster
 
 class BoosterRegressor(BaseEstimator, RegressorMixin):
@@ -23,17 +26,23 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         self.direct_link = direct_link
         self.dropout = dropout
         self.random_state = random_state
-        
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "BoosterRegressor":
-        """Fit the booster model."""
-        from sklearn.linear_model import Ridge
-        
+        self.scaler_ = StandardScaler()
+        self.y_mean_ = None
+
+    def fit(self, X, y) -> "BoosterRegressor":
+        """Fit the booster model."""        
+        if isinstance(X, pd.DataFrame):
+            X = X.values
+        if isinstance(y, pd.DataFrame):
+            y = y.values
+        X = self.scaler_.fit_transform(X)
+        self.y_mean_ = np.mean(y)
+        y = y - self.y_mean_
         # Use Ridge as default base estimator if none provided
         if self.base_estimator is None:
             self.base_estimator_ = Ridge()
         else:
-            self.base_estimator_ = self.base_estimator
-            
+            self.base_estimator_ = self.base_estimator            
         # Initialize Rust booster
         self.booster_ = _RustBooster(
             self.base_estimator_,
@@ -41,22 +50,21 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
             self.learning_rate,
             self.n_hidden_features,
             self.direct_link
-        )
-        
+        )        
         # Convert inputs to correct format
         X = np.asarray(X, dtype=np.float64)
-        y = np.asarray(y, dtype=np.float64)
-        
+        y = np.asarray(y, dtype=np.float64)        
         # Fit the model
         self.booster_.fit(
             X, y,
             dropout=self.dropout,
             seed=self.random_state if self.random_state is not None else 42
-        )
-        
+        )        
         return self
         
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, X) -> np.ndarray:
         """Make predictions with the booster model."""
-        X = np.asarray(X, dtype=np.float64)
-        return self.booster_.predict(X)
+        if isinstance(X, pd.DataFrame):
+            X = X.values
+        X = self.scaler_.transform(X)
+        return self.booster_.predict(X) + self.y_mean_
