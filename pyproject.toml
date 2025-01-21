@@ -7,13 +7,27 @@ name = "genbooster"
 version = "0.1.0"
 description = "A fast boosting implementation using Rust and Python"
 requires-python = ">=3.7"
+authors = [
+    {name = "T. Moudiki", email = "thierry.moudiki@gmail.com"},
+]
 dependencies = [
     "nnetsauce",
     "numpy>=1.20.0",
     "pandas",
     "scikit-learn>=1.0.0",
 ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "License :: OSI Approved :: BSD3 Clear",
+    "Operating System :: OS Independent",
+]
+readme = "README.md"
+
+[project.urls]
+Repository = "https://github.com/yourusername/genbooster"
 
 [tool.maturin]
 python-source = "src"
 module-name = "genbooster.rust_core"
+features = ["pyo3/extension-module"]
