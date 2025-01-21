@@ -11,6 +11,7 @@ from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 from sklearn.utils.discovery import all_estimators
 
+
 datasets = [load_iris(return_X_y=True), load_breast_cancer(return_X_y=True), load_wine(return_X_y=True)]
 datasets_names = ['iris', 'breast_cancer', 'wine']
 accuracy_scores = []

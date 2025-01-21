@@ -50,11 +50,6 @@ def genboost_cv(X_train, y_train,
             scores.append(score)
         
         scores = np.array(scores)
-        print("scores", scores)
-        # Check for NaN or negative scores
-        #if np.any(np.isnan(scores)) or np.any(scores < 0):
-        #    return -1e6            
-        # Return negative score for minimization
         return np.mean(scores)
         
     except Exception as e:

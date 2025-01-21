@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import nnetsauce as ns
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import Ridge
 from .rust_core import RustBooster as _RustBooster
 
@@ -74,22 +74,28 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
 class BoosterClassifier(BaseEstimator, ClassifierMixin):
     """A scikit-learn compatible wrapper for the Rust-based booster."""
     
-    def __init__(self, base_estimator: Optional[BaseEstimator] = None, 
-                 n_estimators: int = 100, learning_rate: float = 0.01, 
-                 n_hidden_features: int = 5, direct_link: bool = True, 
-                 dropout: float = 0.0, 
-                 random_state: Optional[int] = 42):
+    def __init__(self,
+                base_estimator: Optional[BaseEstimator] = None,
+                n_estimators: int = 100,
+                learning_rate: float = 0.01,
+                n_hidden_features: int = 5,
+                direct_link: bool = True,
+                weights_distribution: str = 'uniform',
+                dropout: float = 0.0,
+                random_state: Optional[int] = 42):
         if base_estimator is None:
-            base_estimator = Ridge()
-        self.base_estimator = base_estimator  # Store original estimator
-        self.multitask_estimator = ns.SimpleMultitaskClassifier(base_estimator)  # Create wrapped version
+            self.base_estimator = Ridge()
+        else: 
+            self.base_estimator = base_estimator        
         self.n_estimators = n_estimators
         self.learning_rate = learning_rate
         self.n_hidden_features = n_hidden_features
         self.direct_link = direct_link
+        self.weights_distribution = weights_distribution
         self.dropout = dropout
         self.random_state = random_state
         self.y_mean_ = None
+        self.boosters_ = None 
     
     def fit(self, X, y) -> "BoosterClassifier":
         """Fit the booster model."""
@@ -97,26 +103,39 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
             X = X.values
         if isinstance(y, pd.DataFrame):
             y = y.values        
-        #y = np.asarray([int(x) for x in y]).ravel()   
-        #print("In genbooster.py, L.103", y)
-        self.multitask_estimator.fit(X, y)
+        y = np.asarray([int(x) for x in y]).ravel() 
+        Y = OneHotEncoder().fit_transform(y.reshape(-1, 1)).toarray()
+        self.classes_ = np.unique(y)
+        self.n_classes_ = len(self.classes_)
+        
+        # Store the results of the list comprehension
+        self.boosters_ = []
+        for i in range(self.n_classes_):
+            booster = _RustBooster(
+                self.base_estimator,
+                self.n_estimators,
+                self.learning_rate,
+                self.n_hidden_features,
+                self.direct_link,
+                weights_distribution=self.weights_distribution
+            )
+            booster.fit(X, Y[:, i], dropout=self.dropout, seed=self.random_state)
+            self.boosters_.append(booster)
+            
         return self
     
     def predict(self, X) -> np.ndarray:
         """Make predictions with the booster model."""
         if isinstance(X, pd.DataFrame):
             X = X.values       
-        return self.multitask_estimator.predict(X)
+        preds_proba = self.predict_proba(X)
+        return np.argmax(preds_proba, axis=0)
 
     def predict_proba(self, X) -> np.ndarray:
         """Make probability predictions with the booster model."""
         if isinstance(X, pd.DataFrame):
             X = X.values
-        return self.multitask_estimator.predict_proba(X)
-
-    def score(self, X, y) -> float:
-        """Calculate the accuracy of the model."""
-        if isinstance(X, pd.DataFrame):
-            X = X.values
-        preds = self.predict(X)
-        return np.mean(preds == y)
+        raw_preds = np.asarray([booster.predict(X) for booster in self.boosters_])
+        shifted_preds = raw_preds - np.max(raw_preds, axis=0)
+        exp_preds = np.exp(shifted_preds)
+        return exp_preds / np.sum(exp_preds, axis=0)

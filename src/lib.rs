@@ -131,9 +131,9 @@ impl RustBooster {
             
             // Optional: print mean absolute residual to track progress
             let mean_abs_residual = residuals.mapv(|x| x.abs()).mean().unwrap();
-            if i % 10 == 0 {
-                 println!("Mean absolute residual: {:.4}", mean_abs_residual);
-            }
+            // if i % 10 == 0 {
+            //      println!("Mean absolute residual: {:.4}", mean_abs_residual);
+            // }
         }
         Ok(())
     }
