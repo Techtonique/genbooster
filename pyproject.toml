@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "A fast boosting implementation using Rust and Python"
 requires-python = ">=3.7"
 dependencies = [
+    "nnetsauce",
     "numpy>=1.20.0",
     "pandas",
     "scikit-learn>=1.0.0",

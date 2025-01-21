@@ -1,5 +1,5 @@
-from .genbooster import BoosterRegressor
+from .genbooster import BoosterRegressor, BoosterClassifier
 from .rust_core import RustBooster
 
 
-__all__ = ["BoosterRegressor", "RustBooster"]
+__all__ = ["BoosterRegressor", "BoosterClassifier", "RustBooster"]
