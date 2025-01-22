@@ -54,7 +54,7 @@ docs: install ## generate docs
 	#pip install black pdoc 
 	#black genbooster/* --line-length=80	
 	#find genbooster/ -name "*.py" -exec autopep8 --max-line-length=80 --in-place {} +
-	pdoc -t docs genbooster/* --output-dir genbooster-docs
+	pdoc -t docs src/genbooster/* --output-dir genbooster-docs
 	find . -name '__pycache__' -exec rm -fr {} +
 	cp -rf genbooster-docs/* ../../Pro_Website/Techtonique.github.io/genbooster
 
@@ -62,7 +62,7 @@ servedocs: install ## compile the docs watching for change
 	#pip install black pdoc 
 	#black genbooster/* --line-length=80	
 	#find genbooster/ -name "*.py" -exec autopep8 --max-line-length=80 --in-place {} +
-	pdoc -t docs genbooster/* 
+	pdoc -t docs src/genbooster/* 
 	find . -name '__pycache__' -exec rm -fr {} +
 
 release: dist ## package and upload a release
@@ -81,22 +81,5 @@ build-site: docs ## export mkdocs website to a folder
 	cp -rf genbooster-docs/* ../../Pro_Website/Techtonique.github.io/genbooster
 	find . -name '__pycache__' -exec rm -fr {} +
 
-run-custom: ## run all custom examples with one command
-	find examples -maxdepth 2 -name "*custom*.py" -exec  python3 {} \;
-
 run-examples: ## run all examples with one command
 	find examples -maxdepth 2 -name "*.py" -exec  python3 {} \;
-
-run-mts: ## run all mts examples with one command
-	find examples -maxdepth 2 -name "*mts*.py" -exec  python3 {} \;
-
-run-lazy: ## run all lazy examples with one command
-	find examples -maxdepth 2 -name "lazy*.py" -exec  python3 {} \;
-
-run-conformal: ## run all lazy examples with one command
-	find examples -maxdepth 2 -name "*conformal*.py" -exec  python3 {} \;
-
-run-tests: install ## run all the tests with one command
-	pip3 install coverage nose2
-	python3 -m coverage run -m unittest discover -s genbooster/tests -p "*.py"	
-

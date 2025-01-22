@@ -12,19 +12,34 @@ class RandomBagClassifier(BaseEstimator, ClassifierMixin):
     """Generic Random Bagging Classifier (for any base learner).
 
     Parameters:
+
         base_estimator: Base learner to use for the booster.
+
         n_estimators: Number of boosting stages to perform.
+
         learning_rate: Learning rate shrinks the contribution of each estimator.
+
         n_hidden_features: Number of hidden features to use for the base learner.
+
         direct_link: Whether to use direct link for the base learner or not.
+
         weights_distribution: Distribution of the weights for the booster (uniform or normal).
+
         dropout: Dropout rate.
+
         random_state: Random state.
     
     Attributes:
+
         baggers_: The bagging learners.
+
         classes_: The classes of the target variable.
+
         n_classes_: The number of classes of the target variable.
+
+    Examples:
+
+        See https://github.com/Techtonique/genbooster/tree/main/examples
 
     """
     
@@ -55,10 +70,13 @@ class RandomBagClassifier(BaseEstimator, ClassifierMixin):
         """Fit the bagging model.
         
         Parameters:
+
             X: Input data.
+
             y: Target data.
             
         Returns:
+
             self: The fitted bagging model.
         """
         if isinstance(X, pd.DataFrame):
@@ -89,9 +107,11 @@ class RandomBagClassifier(BaseEstimator, ClassifierMixin):
         """Make predictions with the bagging model.
         
         Parameters:
+
             X: Input data.
             
         Returns:
+
             preds: Class predictions.
         """
         if isinstance(X, pd.DataFrame):
@@ -103,9 +123,11 @@ class RandomBagClassifier(BaseEstimator, ClassifierMixin):
         """Make probability predictions with the booster model.
         
         Parameters:
+
             X: Input data.
             
         Returns:
+        
             preds: Probability predictions.
         """
         if isinstance(X, pd.DataFrame):

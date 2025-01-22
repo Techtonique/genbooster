@@ -13,19 +13,33 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         Parameters:
 
             base_estimator: Base learner to use for the booster.
+
             n_estimators: Number of boosting stages to perform.
+
             learning_rate: Learning rate shrinks the contribution of each estimator.
+
             n_hidden_features: Number of hidden features to use for the base learner.
+
             direct_link: Whether to use direct link for the base learner or not.
+
             weights_distribution: Distribution of the weights for the booster (uniform or normal).
+
             dropout: Dropout rate.
+
             random_state: Random state.
 
         Attributes:
+
             base_estimator_: The base learner.
+
             booster_: The boosting model.
+
             y_mean_: Mean of the target variable.
-                    
+
+        Examples:
+
+            See https://github.com/Techtonique/genbooster/tree/main/examples
+                                
     """
     
     def __init__(
@@ -54,10 +68,13 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         """Fit the boosting model.
         
         Parameters:
+
             X: Input data.
+
             y: Target data.
             
         Returns:
+
             self: The fitted boosting model.
         """        
         if isinstance(X, pd.DataFrame):
@@ -94,9 +111,11 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         """Make predictions with the boosting model.
 
         Parameters:
+
             X: Input data.
             
         Returns:
+        
             preds: Predictions.
         """
         if isinstance(X, pd.DataFrame):
