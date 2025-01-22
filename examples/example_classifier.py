@@ -6,7 +6,7 @@ from sklearn.datasets import load_iris, load_breast_cancer, load_wine, load_digi
 from sklearn.linear_model import Ridge, RidgeCV
 from sklearn.tree import ExtraTreeRegressor
 from sklearn.model_selection import train_test_split
-from genbooster.genbooster import BoosterClassifier
+from genbooster.genboosterclassifier import BoosterClassifier
 from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 from time import time

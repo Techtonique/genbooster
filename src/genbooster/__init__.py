@@ -1,4 +1,5 @@
-from .genbooster import BoosterRegressor, BoosterClassifier
+from .genboosterregressor import BoosterRegressor
+from .genboosterclassifier import BoosterClassifier
 from .rust_core import RustBooster
 
 

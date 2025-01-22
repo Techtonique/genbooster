@@ -6,7 +6,7 @@ from sklearn.datasets import load_diabetes
 from sklearn.linear_model import Ridge, RidgeCV
 from sklearn.tree import ExtraTreeRegressor
 from sklearn.model_selection import train_test_split
-from genbooster.genbooster import BoosterRegressor
+from genbooster.genboosterregressor import BoosterRegressor
 from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 
