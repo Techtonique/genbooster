@@ -7,8 +7,8 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import Ridge
 from .rust_core import RustBooster as _RustBooster
 
-class BoosterRegressor(BaseEstimator, RegressorMixin):
-    """Generic Gradient Boosting Regressor (for any base learner).
+class RandomBagRegressor(BaseEstimator, RegressorMixin):
+    """Generic Random Bagging Regressor (for any base learner).
 
         Parameters:
 
@@ -22,9 +22,8 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
             random_state: Random state.
 
         Attributes:
-            base_estimator_: The base learner.
-            booster_: The boosting model.
-            y_mean_: Mean of the target variable.
+            baggers_: The bagging learners.
+            y_mean_: The mean of the target variable.
                     
     """
     
@@ -50,15 +49,15 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         self.scaler_ = StandardScaler()
         self.y_mean_ = None
 
-    def fit(self, X, y) -> "BoosterRegressor":
-        """Fit the boosting model.
+    def fit(self, X, y) -> "RandomBagRegressor":
+        """Fit the bagging model.
         
         Parameters:
             X: Input data.
             y: Target data.
             
         Returns:
-            self: The fitted boosting model.
+            self: The fitted booster model.
         """        
         if isinstance(X, pd.DataFrame):
             X = X.values
@@ -82,7 +81,7 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
             weights_distribution=self.weights_distribution
         )        
         # Fit the model
-        self.booster_.fit_boosting(
+        self.booster_.fit_bagging(
             np.asarray(scaled_X, dtype=np.float64), 
             np.asarray(centered_y, dtype=np.float64),
             dropout=self.dropout,
@@ -91,7 +90,7 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         return self
         
     def predict(self, X) -> np.ndarray:
-        """Make predictions with the boosting model.
+        """Make predictions with the bagging model.
 
         Parameters:
             X: Input data.
@@ -102,4 +101,4 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         if isinstance(X, pd.DataFrame):
             X = X.values
         scaled_X = self.scaler_.transform(X)
-        return self.booster_.predict_boosting(scaled_X) + self.y_mean_
+        return self.booster_.predict_bagging(scaled_X) + self.y_mean_

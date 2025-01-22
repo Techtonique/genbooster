@@ -6,10 +6,10 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import Ridge
 from .rust_core import RustBooster as _RustBooster
+    
 
-
-class BoosterClassifier(BaseEstimator, ClassifierMixin):
-    """Generic Gradient Boosting Classifier (for any base learner).
+class RandomBagClassifier(BaseEstimator, ClassifierMixin):
+    """Generic Random Bagging Classifier (for any base learner).
 
     Parameters:
         base_estimator: Base learner to use for the booster.
@@ -22,9 +22,9 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
         random_state: Random state.
     
     Attributes:
+        baggers_: The bagging learners.
         classes_: The classes of the target variable.
         n_classes_: The number of classes of the target variable.
-        boosters_: Base learners.
 
     """
     
@@ -48,17 +48,18 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
         self.weights_distribution = weights_distribution
         self.dropout = dropout
         self.random_state = random_state
+        self.y_mean_ = None
         self.boosters_ = None 
     
-    def fit(self, X, y) -> "BoosterClassifier":
-        """Fit the booster model.
+    def fit(self, X, y) -> "RandomBagClassifier":
+        """Fit the bagging model.
         
         Parameters:
             X: Input data.
             y: Target data.
             
         Returns:
-            self: The fitted boosting model.
+            self: The fitted bagging model.
         """
         if isinstance(X, pd.DataFrame):
             X = X.values
@@ -80,12 +81,12 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
                 self.direct_link,
                 weights_distribution=self.weights_distribution
             )
-            booster.fit_boosting(X, Y[:, i], dropout=self.dropout, seed=self.random_state)
+            booster.fit_bagging(X, Y[:, i], dropout=self.dropout, seed=self.random_state)
             self.boosters_.append(booster)            
         return self
     
     def predict(self, X) -> np.ndarray:
-        """Make predictions with the boosting model.
+        """Make predictions with the bagging model.
         
         Parameters:
             X: Input data.
@@ -99,7 +100,7 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
         return np.argmax(preds_proba, axis=0)
 
     def predict_proba(self, X) -> np.ndarray:
-        """Make probability predictions with the boosting model.
+        """Make probability predictions with the booster model.
         
         Parameters:
             X: Input data.
@@ -109,7 +110,7 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
         """
         if isinstance(X, pd.DataFrame):
             X = X.values
-        raw_preds = np.asarray([booster.predict_boosting(X) for booster in self.boosters_])
+        raw_preds = np.asarray([booster.predict_bagging(X) for booster in self.boosters_])
         shifted_preds = raw_preds - np.max(raw_preds, axis=0)
         exp_preds = np.exp(shifted_preds)
         return exp_preds / np.sum(exp_preds, axis=0)
