@@ -13,27 +13,35 @@ from time import time
 from sklearn.utils.discovery import all_estimators
 
 
-datasets = [load_iris(return_X_y=True), load_breast_cancer(return_X_y=True), load_wine(return_X_y=True)]
+datasets = [load_iris(return_X_y=True),
+            load_breast_cancer(return_X_y=True),
+            load_wine(return_X_y=True)]
 datasets_names = ['iris', 'breast_cancer', 'wine']
-accuracy_scores = []
+
+# Booster
 for dataset, dataset_name in zip(datasets, datasets_names):
-    print(dataset_name)
-    X, y = dataset    
+    print("\n data set ", dataset_name)
+    accuracy_scores = []
+    X, y = dataset
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     for estimator in tqdm(all_estimators(type_filter='regressor')):
         try:
-            clf = BoosterClassifier(base_estimator=estimator[1]())
+            clf = BoosterClassifier(base_estimator=estimator[1](), n_hidden_features=10)
             start = time()
             clf.fit(X_train, y_train)
-            end = time()
-            print(f"Time taken: {end - start} seconds")
+            training_time = time() - start
+            print(f'\n Time (training): {training_time}')
+            start = time()
             preds = clf.predict(X_test)
+            inference_time = time() - start
+            print(f'\n Time (inference): {inference_time}')
             accuracy = np.mean(preds == y_test)
-            print("accuracy", accuracy)
-            accuracy_scores.append((dataset_name, estimator[0], accuracy, end - start))
+            print(f'\n Accuracy: {accuracy}')
+            accuracy_scores.append((dataset_name, estimator[0], accuracy,
+                                    training_time, inference_time))
         except Exception as e:
-            print(e)
-
-accuracy_scores_df = pd.DataFrame(accuracy_scores, columns=['dataset', 'estimator', 'accuracy', 'time'])
-accuracy_scores_df.sort_values(by='accuracy', ascending=False, inplace=True)
-print(accuracy_scores_df)
+            continue
+    accuracy_scores_df = pd.DataFrame(accuracy_scores, columns=['dataset', 'estimator', 'accuracy',
+                                                                'training_time', 'inference_time'])
+    accuracy_scores_df.sort_values(by='accuracy', ascending=False, inplace=True)
+    print(accuracy_scores_df)
