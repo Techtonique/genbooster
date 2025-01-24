@@ -26,6 +26,8 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
 
             dropout: Dropout rate.
 
+            tolerance: Tolerance for early stopping.
+
             random_state: Random state.
 
         Attributes:
@@ -46,11 +48,12 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         self,
         base_estimator: Optional[BaseEstimator] = None,
         n_estimators: int = 100,
-        learning_rate: float = 0.01,
+        learning_rate: float = 0.1,
         n_hidden_features: int = 5,
         direct_link: bool = True,
         weights_distribution: str = 'uniform',
         dropout: float = 0.0,
+        tolerance: float = 1e-4,
         random_state: Optional[int] = 42
     ):
         self.base_estimator = base_estimator
@@ -60,6 +63,7 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         self.direct_link = direct_link
         self.weights_distribution = weights_distribution
         self.dropout = dropout
+        self.tolerance = tolerance
         self.random_state = random_state
         self.scaler_ = StandardScaler()
         self.y_mean_ = None
@@ -96,7 +100,8 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
             self.learning_rate,
             self.n_hidden_features,
             self.direct_link,
-            weights_distribution=self.weights_distribution
+            weights_distribution=self.weights_distribution,
+            tolerance=self.tolerance
         )        
         # Fit the model
         self.booster_.fit_boosting(

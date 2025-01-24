@@ -15,8 +15,7 @@ from sklearn.utils.discovery import all_estimators
 
 X, y = load_iris(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-clf = BoosterClassifier(base_estimator=ExtraTreeRegressor(), 
-                        n_hidden_features=10)
+clf = BoosterClassifier(base_estimator=ExtraTreeRegressor())
 start = time()
 clf.fit(X_train, y_train)
 end = time()
@@ -29,8 +28,7 @@ print(np.mean(preds == y_test))
 
 X, y = load_breast_cancer(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-clf = BoosterClassifier(base_estimator=ExtraTreeRegressor(), 
-                        n_hidden_features=10)
+clf = BoosterClassifier(base_estimator=ExtraTreeRegressor())
 start = time()
 clf.fit(X_train, y_train)
 end = time()
@@ -43,8 +41,7 @@ print(np.mean(preds == y_test))
 
 X, y = load_wine(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-clf = BoosterClassifier(base_estimator=ExtraTreeRegressor(), 
-                        n_hidden_features=10)
+clf = BoosterClassifier(base_estimator=ExtraTreeRegressor())
 start = time()
 clf.fit(X_train, y_train)
 end = time()
@@ -57,8 +54,7 @@ print(np.mean(preds == y_test))
 
 X, y = load_digits(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-clf = BoosterClassifier(base_estimator=ExtraTreeRegressor(), 
-                        n_hidden_features=10)
+clf = BoosterClassifier(base_estimator=ExtraTreeRegressor())
 start = time()
 clf.fit(X_train, y_train)
 end = time()

@@ -29,6 +29,7 @@ struct RustBooster {
     direct_link: bool,
     weights_distribution: WeightsDistribution,
     dropout: f64,
+    tolerance: f64,
     seed: u64,
 }
 
@@ -42,6 +43,7 @@ impl RustBooster {
         n_hidden_features: i32,
         direct_link: bool,
         weights_distribution: Option<&str>,
+        tolerance: f64,
     ) -> Self {
         let weights_dist = match weights_distribution.unwrap_or("uniform") {
             "normal" => WeightsDistribution::Normal,
@@ -59,6 +61,7 @@ impl RustBooster {
             weights_distribution: weights_dist,
             dropout: 0.0,
             seed: 0,
+            tolerance: tolerance
         }
     }
 
@@ -92,10 +95,9 @@ impl RustBooster {
             self.base_learners[i as usize] = clone_fn.call1((self.base_learners[i as usize].clone_ref(py),))?.into();
         }
         
+        let mut previous_l2_norm = f64::INFINITY;
+        
         for i in 0..self.n_estimators {
-            // if i % 10 == 0 {  // Print every 10th iteration
-            //     println!("Training estimator {}/{}", i+1, self.n_estimators);
-            // }            
             // Generate random weights for hidden layer
             let mut w = Array2::zeros((n_features, self.n_hidden_features as usize));
             for w_row in w.rows_mut() {
@@ -110,8 +112,7 @@ impl RustBooster {
             // Forward pass with activation
             let hidden = self.forward_pass(py, &x_array.to_owned(), &w, dropout, seed + i as u64)?;            
             // No need to clone again, we already have independent copies
-            let base_learner = &self.base_learners[i as usize];
-            
+            let base_learner = &self.base_learners[i as usize];            
             // Fit the base learner
             let kwargs = PyDict::new(py);
             kwargs.set_item("X", hidden.to_pyarray(py))?;
@@ -127,13 +128,17 @@ impl RustBooster {
             // Update residuals
             residuals = residuals - self.learning_rate * pred_array.to_owned();            
             // Store the fitted estimator back
-            self.base_learners[i as usize] = base_learner.clone_ref(py);
+            self.base_learners[i as usize] = base_learner.clone_ref(py);            
+            // Calculate current L2 norm of residuals
+            let current_l2_norm = residuals.mapv(|x| x.powi(2)).sum();
             
-            // Optional: print mean absolute residual to track progress
-            let mean_abs_residual = residuals.mapv(|x| x.abs()).mean().unwrap();
-            // if i % 10 == 0 {
-            //      println!("Mean absolute residual: {:.4}", mean_abs_residual);
-            // }
+            // Check if change in L2 norm is small enough for early stopping
+            if (current_l2_norm - previous_l2_norm).abs() <= self.tolerance {
+                // Update n_estimators to current iteration and break
+                self.n_estimators = i + 1;
+                break;
+            }            
+            previous_l2_norm = current_l2_norm;
         }
         Ok(())
     }

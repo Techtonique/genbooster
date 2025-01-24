@@ -27,6 +27,8 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
 
         dropout: Dropout rate.
 
+        tolerance: Tolerance for early stopping.
+
         random_state: Random state.
     
     Attributes:
@@ -46,11 +48,12 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self,
                 base_estimator: Optional[BaseEstimator] = None,
                 n_estimators: int = 100,
-                learning_rate: float = 0.01,
+                learning_rate: float = 0.1,
                 n_hidden_features: int = 5,
                 direct_link: bool = True,
                 weights_distribution: str = 'uniform',
                 dropout: float = 0.0,
+                tolerance: float = 1e-4,
                 random_state: Optional[int] = 42):
         if base_estimator is None:
             self.base_estimator = Ridge()
@@ -62,7 +65,8 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
         self.direct_link = direct_link
         self.weights_distribution = weights_distribution
         self.dropout = dropout
-        self.random_state = random_state
+        self.tolerance = tolerance
+        self.random_state = random_state        
         self.boosters_ = None 
     
     def fit(self, X, y) -> "BoosterClassifier":
@@ -96,7 +100,8 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
                 self.learning_rate,
                 self.n_hidden_features,
                 self.direct_link,
-                weights_distribution=self.weights_distribution
+                weights_distribution=self.weights_distribution,
+                tolerance=self.tolerance
             )
             booster.fit_boosting(X, Y[:, i], dropout=self.dropout, seed=self.random_state)
             self.boosters_.append(booster)            
