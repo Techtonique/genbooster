@@ -43,14 +43,13 @@ impl RustBooster {
         n_hidden_features: i32,
         direct_link: bool,
         weights_distribution: Option<&str>,
-        tolerance: f64,
+        tolerance: Option<f64>,
     ) -> Self {
         let weights_dist = match weights_distribution.unwrap_or("uniform") {
             "normal" => WeightsDistribution::Normal,
             _ => WeightsDistribution::Uniform,
         };
 
-        // Initialize with a single reference - will be properly cloned in fit
         RustBooster {
             base_learners: vec![base_estimator; n_estimators as usize],
             weights: Vec::new(),
@@ -61,7 +60,7 @@ impl RustBooster {
             weights_distribution: weights_dist,
             dropout: 0.0,
             seed: 0,
-            tolerance: tolerance
+            tolerance: tolerance.unwrap_or(1e-4)
         }
     }
 

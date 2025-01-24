@@ -1,6 +1,6 @@
 # Genbooster
 
-A fast gradient boosting and bagging (RandomBagClassifier, similar to RandomForestClassifier) implementation using Rust and Python. Any base learner can be employed.
+A fast gradient boosting and bagging (RandomBagClassifier, similar to RandomForestClassifier) implementation using Rust and Python. Any base learner can be employed. Base learners input features are engineered using a randomized  artificial neural network layer.
 
 ![PyPI](https://img.shields.io/pypi/v/genbooster) 
 [![Downloads](https://pepy.tech/badge/genbooster)](https://pepy.tech/project/genbooster) 
@@ -30,8 +30,7 @@ from genbooster.randombagclassifier import RandomBagClassifier
 
 X, y = load_iris(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-clf = BoosterClassifier(base_estimator=ExtraTreeRegressor(), 
-                        n_hidden_features=10)
+clf = BoosterClassifier(base_estimator=ExtraTreeRegressor())
 clf.fit(X_train, y_train)
 preds = clf.predict(X_test)
 print(np.mean(preds == y_test))
@@ -40,8 +39,7 @@ print(np.mean(preds == y_test))
 ### 2.2 - Bagging (RandomBagClassifier, similar to RandomForestClassifier)
 
 ```python
-clf = RandomBagClassifier(base_estimator=ExtraTreeRegressor(), 
-                        n_hidden_features=10)
+clf = RandomBagClassifier(base_estimator=ExtraTreeRegressor())
 clf.fit(X_train, y_train)
 preds = clf.predict(X_test)
 print(np.mean(preds == y_test))

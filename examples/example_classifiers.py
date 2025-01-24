@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 from genbooster.genboosterclassifier import BoosterClassifier
 from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
+from time import time
 from sklearn.utils.discovery import all_estimators
 
 
@@ -21,13 +22,18 @@ for dataset, dataset_name in zip(datasets, datasets_names):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     for estimator in tqdm(all_estimators(type_filter='regressor')):
         try:
-            clf = BoosterClassifier(base_estimator=estimator[1](), n_hidden_features=10)
+            clf = BoosterClassifier(base_estimator=estimator[1]())
+            start = time()
             clf.fit(X_train, y_train)
+            end = time()
+            print(f"Time taken: {end - start} seconds")
             preds = clf.predict(X_test)
-            accuracy_scores.append((dataset_name, estimator[0], np.mean(preds == y_test)))
+            accuracy = np.mean(preds == y_test)
+            print("accuracy", accuracy)
+            accuracy_scores.append((dataset_name, estimator[0], accuracy, end - start))
         except Exception as e:
             print(e)
 
-accuracy_scores_df = pd.DataFrame(accuracy_scores, columns=['dataset', 'estimator', 'accuracy'])
+accuracy_scores_df = pd.DataFrame(accuracy_scores, columns=['dataset', 'estimator', 'accuracy', 'time'])
 accuracy_scores_df.sort_values(by='accuracy', ascending=False, inplace=True)
 print(accuracy_scores_df)
