@@ -91,7 +91,6 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
         self.classes_ = np.unique(y)
         self.n_classes_ = len(self.classes_)
         
-        # Store the results of the list comprehension
         self.boosters_ = []
         for i in range(self.n_classes_):
             booster = _RustBooster(
@@ -103,7 +102,35 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
                 weights_distribution=self.weights_distribution,
                 tolerance=self.tolerance
             )
-            booster.fit_boosting(X, Y[:, i], dropout=self.dropout, seed=self.random_state)
+            # Try different shapes for y_i until one works
+            y_i = Y[:, i]
+            shapes_to_try = [
+                lambda y: y,                    # 1D array (n_samples,)
+                lambda y: y.reshape(-1, 1),     # 2D array (n_samples, 1)
+                lambda y: y.reshape(1, -1),     # 2D array (1, n_samples)
+                lambda y: y.reshape(-1),        # Flattened 1D
+                lambda y: np.expand_dims(y, 0), # Add dimension at start
+                lambda y: np.expand_dims(y, 1), # Add dimension at end
+            ]
+            
+            success = False
+            errors = []
+            for shape_fn in shapes_to_try:
+                try:
+                    y_shaped = shape_fn(y_i)
+                    print(f"Trying shape {y_shaped.shape} for class {i}")  # Debug print
+                    booster.fit_boosting(X.reshape(X.shape[0], -1), y_shaped, 
+                                       dropout=self.dropout, seed=self.random_state)
+                    success = True
+                    break
+                except (ValueError, TypeError) as e:
+                    errors.append(f"Shape {y_shaped.shape}: {str(e)}")
+                    continue
+            
+            if not success:
+                error_msg = "\n".join(errors)
+                raise ValueError(f"Could not fit booster with any target shape for class {i}. Errors:\n{error_msg}")
+                
             self.boosters_.append(booster)            
         return self
     

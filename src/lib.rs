@@ -1,4 +1,4 @@
-use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
+use numpy::{PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use rand::Rng;
@@ -24,14 +24,12 @@ enum WeightsDistribution {
 enum RegressionModelParams {
     LinearRegression(LinearRegression),
     ElasticNet { penalty: f64, l1_ratio: f64 },
-    PlsRegression { n_components: usize, max_iterations: usize },  // Removed DecisionTree
 }
 
 // Update RegressionModel enum for initialized models
 enum RegressionModel {
     LinearRegression(FittedLinearRegression<f64>),  // Changed to FittedLinearRegression
     ElasticNet(ElasticNet<f64>),
-    PlsRegression(PlsRegression<f64>),
 }
 
 #[pymodule]
@@ -54,12 +52,8 @@ impl Regressor {
         let model_params = match model_name {
             "LinearRegression" => Ok(RegressionModelParams::LinearRegression(LinearRegression::default())),
             "ElasticNet" => Ok(RegressionModelParams::ElasticNet {
-                penalty: 1.0,
+                penalty: 0.01,
                 l1_ratio: 0.5,
-            }),
-            "PlsRegression" => Ok(RegressionModelParams::PlsRegression {
-                n_components: 2,  // Default number of components
-                max_iterations: 200,  // Default max iterations
             }),
             _ => Err(PyValueError::new_err(format!("Unknown model: {}", model_name))),
         }?;
@@ -69,44 +63,27 @@ impl Regressor {
         })
     }
 
-    fn fit(&mut self, x: PyReadonlyArray2<f64>, y: PyReadonlyArray2<f64>) -> PyResult<()> {
+    fn fit(&mut self, x: PyReadonlyArray2<f64>, y: PyReadonlyArray1<f64>) -> PyResult<()> {
         let x = x.as_array().to_owned();
         let y = y.as_array().to_owned();
-        
-        // Extract first column of y to make it 1D for non-PLS models
-        let y_1d = if y.shape()[1] == 1 {
-            y.column(0).to_owned()
-        } else {
-            return Err(PyValueError::new_err("Target array must have shape (n_samples, 1)"));
-        };
-        
+                
         // Create appropriate Dataset based on model type
         let model = match self.model_params.take().ok_or(PyValueError::new_err("Model not initialized"))? {
             RegressionModelParams::LinearRegression(m) => {
                 // Use 1D targets for LinearRegression
-                let dataset = Dataset::new(x.clone(), y_1d);
+                let dataset = Dataset::new(x.clone(), y);
                 RegressionModel::LinearRegression(m.fit(&dataset)
                     .map_err(|e| PyValueError::new_err(format!("LinearRegression fit error: {}", e)))?)
             },
             RegressionModelParams::ElasticNet { penalty, l1_ratio } => {
                 // Use 1D targets for ElasticNet
-                let dataset = Dataset::new(x.clone(), y_1d);
+                let dataset = Dataset::new(x.clone(), y);
                 RegressionModel::ElasticNet(
                     ElasticNet::params()
                         .penalty(penalty)
                         .l1_ratio(l1_ratio)
                         .fit(&dataset)
                         .map_err(|e| PyValueError::new_err(format!("ElasticNet fit error: {}", e)))?
-                )
-            },
-            RegressionModelParams::PlsRegression { n_components, max_iterations } => {
-                // Use 2D targets for PlsRegression
-                let dataset = Dataset::new(x, y);
-                RegressionModel::PlsRegression(
-                    PlsRegression::params(n_components)
-                        .max_iterations(max_iterations)
-                        .fit(&dataset)
-                        .map_err(|e| PyValueError::new_err(format!("PlsRegression fit error: {}", e)))?
                 )
             },
         };
@@ -131,8 +108,7 @@ impl Regressor {
                         // Convert 1D to 2D array
                         Array2::from_shape_vec((pred.targets().len(), 1), pred.targets().to_vec())
                             .map_err(|e| PyValueError::new_err(format!("Failed to reshape predictions: {}", e)))?
-                    },
-                    RegressionModel::PlsRegression(m) => m.predict(x).targets().to_owned(),  // Already 2D
+                    },                    
                 };
                 Python::with_gil(|py| Ok(predictions.to_pyarray(py).to_owned()))
             }
