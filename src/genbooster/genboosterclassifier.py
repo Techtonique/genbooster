@@ -117,8 +117,7 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
             errors = []
             for shape_fn in shapes_to_try:
                 try:
-                    y_shaped = shape_fn(y_i)
-                    print(f"Trying shape {y_shaped.shape} for class {i}")  # Debug print
+                    y_shaped = shape_fn(y_i)                    
                     booster.fit_boosting(X.reshape(X.shape[0], -1), y_shaped, 
                                        dropout=self.dropout, seed=self.random_state)
                     success = True

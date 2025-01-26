@@ -21,19 +21,15 @@ class LinfaRegressor(BaseEstimator, RegressorMixin):
         try: 
             self.model.fit(X, y)
         except TypeError as e:
-            print(e)
             try: 
                 self.model.fit(X, y.reshape(-1, 1))
             except TypeError as e:
-                print(e)
                 try: 
                     self.model.fit(X, y.reshape(1, -1))
                 except TypeError as e:
-                    print(e)
                     try: 
                         self.model.fit(X, y.ravel())
                     except TypeError as e:
-                        print(e)
                         raise e
         return self
 

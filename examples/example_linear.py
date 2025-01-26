@@ -3,7 +3,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.utils.discovery import all_estimators
 from sklearn.datasets import load_diabetes, load_iris, load_breast_cancer, load_wine, load_digits
-from sklearn.linear_model import Ridge, RidgeCV
+from sklearn.linear_model import Ridge, RidgeCV, LinearRegression
 from sklearn.tree import ExtraTreeRegressor
 from sklearn.model_selection import train_test_split
 from genbooster.genboosterclassifier import BoosterClassifier
@@ -27,7 +27,6 @@ y = df['target']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=142)
 
 
-# 2.6972142372651713
 regr = LinfaRegressor(model_name="LinearRegression")
 start = time()
 regr.fit(X_train, y_train)
@@ -35,6 +34,14 @@ end = time()
 print(f"Time taken: {end - start} seconds")
 rmse = np.sqrt(mean_squared_error(y_test, regr.predict(X_test)))
 print("\n\n BoosterRegressor RMSE", rmse)
+
+regr = LinearRegression()
+start = time()
+regr.fit(X_train, y_train)
+end = time()
+print(f"Time taken: {end - start} seconds")
+rmse = np.sqrt(mean_squared_error(y_test, regr.predict(X_test)))
+print("\n\n LinearRegression RMSE", rmse)
 
 
 X, y = load_diabetes(return_X_y=True)
@@ -49,6 +56,15 @@ rmse = np.sqrt(mean_squared_error(y_test, regr.predict(X_test)))
 print("\n\n LinfaRegressor RMSE", rmse)
 
 
+regr = LinearRegression()
+start = time()
+regr.fit(X_train, y_train)
+end = time()
+print(f"Time taken: {end - start} seconds")
+rmse = np.sqrt(mean_squared_error(y_test, regr.predict(X_test)))
+print("\n\n LinearRegression RMSE", rmse)
+
+
 datasets = [load_iris(return_X_y=True),
             load_breast_cancer(return_X_y=True),
             load_wine(return_X_y=True),
@@ -60,7 +76,7 @@ for dataset, dataset_name in zip(datasets, datasets_names):
     print("\n data set ", dataset_name)
     X, y = dataset
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    regr = BoosterClassifier(base_estimator=LinfaRegressor(model_name="LinearRegression"))
+    regr = BoosterClassifier(base_estimator=LinearRegression())
     start = time()
     regr.fit(X_train, y_train)
     end = time()
@@ -78,7 +94,7 @@ y = df['target']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=142)
 
-regr = RandomBagRegressor(base_estimator=LinfaRegressor(model_name="LinearRegression"))
+regr = RandomBagRegressor(base_estimator=LinearRegression())
 start = time()
 regr.fit(X_train, y_train)
 end = time()
@@ -91,7 +107,7 @@ for dataset, dataset_name in zip(datasets, datasets_names):
     print("\n data set ", dataset_name)
     X, y = dataset
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    regr = RandomBagClassifier(base_estimator=LinfaRegressor(model_name="LinearRegression"))
+    regr = RandomBagClassifier(base_estimator=LinearRegression())
     start = time()
     regr.fit(X_train, y_train)
     end = time()
