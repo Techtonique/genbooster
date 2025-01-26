@@ -1,4 +1,4 @@
-use numpy::{PyArray1, PyArray2, ToPyArray};
+use numpy::{PyArray1, PyArray2, PyReadonlyArray2, ToPyArray};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use rand::Rng;
@@ -6,6 +6,13 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use ndarray::{Array1, Array2, Axis};
 use ndarray::s;
+use linfa::traits::{Fit, Predict};
+use linfa_linear::LinearRegression;
+use linfa_elasticnet::ElasticNet;
+use linfa_pls::PlsRegression;
+use pyo3::exceptions::PyValueError;
+use linfa::Dataset;
+use linfa_linear::FittedLinearRegression;
 
 #[derive(Clone, Copy)]
 enum WeightsDistribution {
@@ -13,10 +20,125 @@ enum WeightsDistribution {
     Normal,
 }
 
+// First, create a new enum to hold uninitialized models
+enum RegressionModelParams {
+    LinearRegression(LinearRegression),
+    ElasticNet { penalty: f64, l1_ratio: f64 },
+    PlsRegression { n_components: usize, max_iterations: usize },  // Removed DecisionTree
+}
+
+// Update RegressionModel enum for initialized models
+enum RegressionModel {
+    LinearRegression(FittedLinearRegression<f64>),  // Changed to FittedLinearRegression
+    ElasticNet(ElasticNet<f64>),
+    PlsRegression(PlsRegression<f64>),
+}
+
 #[pymodule]
 fn rust_core(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<Regressor>()?;
     m.add_class::<RustBooster>()?;
     Ok(())
+}
+
+#[pyclass]
+struct Regressor {
+    model_params: Option<RegressionModelParams>,  // Store parameters until fit time
+    model: Option<RegressionModel>,              // Store fitted model
+}
+
+#[pymethods]
+impl Regressor {
+    #[new]
+    fn new(model_name: &str) -> PyResult<Self> {
+        let model_params = match model_name {
+            "LinearRegression" => Ok(RegressionModelParams::LinearRegression(LinearRegression::default())),
+            "ElasticNet" => Ok(RegressionModelParams::ElasticNet {
+                penalty: 1.0,
+                l1_ratio: 0.5,
+            }),
+            "PlsRegression" => Ok(RegressionModelParams::PlsRegression {
+                n_components: 2,  // Default number of components
+                max_iterations: 200,  // Default max iterations
+            }),
+            _ => Err(PyValueError::new_err(format!("Unknown model: {}", model_name))),
+        }?;
+        Ok(Regressor { 
+            model_params: Some(model_params),
+            model: None,
+        })
+    }
+
+    fn fit(&mut self, x: PyReadonlyArray2<f64>, y: PyReadonlyArray2<f64>) -> PyResult<()> {
+        let x = x.as_array().to_owned();
+        let y = y.as_array().to_owned();
+        
+        // Extract first column of y to make it 1D for non-PLS models
+        let y_1d = if y.shape()[1] == 1 {
+            y.column(0).to_owned()
+        } else {
+            return Err(PyValueError::new_err("Target array must have shape (n_samples, 1)"));
+        };
+        
+        // Create appropriate Dataset based on model type
+        let model = match self.model_params.take().ok_or(PyValueError::new_err("Model not initialized"))? {
+            RegressionModelParams::LinearRegression(m) => {
+                // Use 1D targets for LinearRegression
+                let dataset = Dataset::new(x.clone(), y_1d);
+                RegressionModel::LinearRegression(m.fit(&dataset)
+                    .map_err(|e| PyValueError::new_err(format!("LinearRegression fit error: {}", e)))?)
+            },
+            RegressionModelParams::ElasticNet { penalty, l1_ratio } => {
+                // Use 1D targets for ElasticNet
+                let dataset = Dataset::new(x.clone(), y_1d);
+                RegressionModel::ElasticNet(
+                    ElasticNet::params()
+                        .penalty(penalty)
+                        .l1_ratio(l1_ratio)
+                        .fit(&dataset)
+                        .map_err(|e| PyValueError::new_err(format!("ElasticNet fit error: {}", e)))?
+                )
+            },
+            RegressionModelParams::PlsRegression { n_components, max_iterations } => {
+                // Use 2D targets for PlsRegression
+                let dataset = Dataset::new(x, y);
+                RegressionModel::PlsRegression(
+                    PlsRegression::params(n_components)
+                        .max_iterations(max_iterations)
+                        .fit(&dataset)
+                        .map_err(|e| PyValueError::new_err(format!("PlsRegression fit error: {}", e)))?
+                )
+            },
+        };
+
+        self.model = Some(model);
+        Ok(())
+    }
+
+    fn predict(&self, x: PyReadonlyArray2<f64>) -> PyResult<Py<PyArray2<f64>>> {
+        let x = x.as_array();
+        match &self.model {
+            Some(model) => {
+                let predictions = match model {
+                    RegressionModel::LinearRegression(m) => {
+                        let pred = m.predict(x);
+                        // Convert 1D to 2D array
+                        Array2::from_shape_vec((pred.targets().len(), 1), pred.targets().to_vec())
+                            .map_err(|e| PyValueError::new_err(format!("Failed to reshape predictions: {}", e)))?
+                    },
+                    RegressionModel::ElasticNet(m) => {
+                        let pred = m.predict(x);
+                        // Convert 1D to 2D array
+                        Array2::from_shape_vec((pred.targets().len(), 1), pred.targets().to_vec())
+                            .map_err(|e| PyValueError::new_err(format!("Failed to reshape predictions: {}", e)))?
+                    },
+                    RegressionModel::PlsRegression(m) => m.predict(x).targets().to_owned(),  // Already 2D
+                };
+                Python::with_gil(|py| Ok(predictions.to_pyarray(py).to_owned()))
+            }
+            None => Err(PyValueError::new_err("Model not initialized")),
+        }
+    }
 }
 
 #[pyclass]
