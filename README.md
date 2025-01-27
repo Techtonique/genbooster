@@ -10,8 +10,33 @@ For more details, see also [https://www.researchgate.net/publication/386212136_S
 
 ## 1 - Installation
 
+From PyPI:
 ```bash
 pip install genbooster
+```
+From GitHub:
+```bash
+pip install git+https://github.com/Techtonique/genbooster.git
+```
+
+I might be required to install Rust and Cargo first: 
+
+Command line:
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+```
+
+Python:
+```python
+import os
+os.environ['PATH'] = f"/root/.cargo/bin:{os.environ['PATH']}"
+```
+
+Command line:
+```bash
+echo $PATH
+rustc --version
+cargo --version
 ```
 
 ## 2 - Usage
