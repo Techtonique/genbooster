@@ -5,7 +5,9 @@ import nnetsauce as ns
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import Ridge
+from sklearn.tree import ExtraTreeRegressor
 from .rust_core import RustBooster as _RustBooster
+
 
 class BoosterRegressor(BaseEstimator, RegressorMixin):
     """Generic Gradient Boosting Regressor (for any base learner).
@@ -57,6 +59,10 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
         random_state: Optional[int] = 42
     ):
         self.base_estimator = base_estimator
+        if base_estimator is None:
+            self.base_estimator = ExtraTreeRegressor()
+        else: 
+            self.base_estimator = base_estimator
         self.n_estimators = n_estimators
         self.learning_rate = learning_rate
         self.n_hidden_features = n_hidden_features

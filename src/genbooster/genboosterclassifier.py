@@ -5,6 +5,7 @@ import nnetsauce as ns
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import Ridge
+from sklearn.tree import ExtraTreeRegressor
 from .rust_core import RustBooster as _RustBooster
 
 
@@ -13,7 +14,7 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
 
     Parameters:
 
-        base_estimator: Base learner to use for the booster.
+        base_estimator: Base learner to use for the booster. Default is ExtraTreeRegressor.
 
         n_estimators: Number of boosting stages to perform.
 
@@ -56,7 +57,7 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
                 tolerance: float = 1e-4,
                 random_state: Optional[int] = 42):
         if base_estimator is None:
-            self.base_estimator = Ridge()
+            self.base_estimator = ExtraTreeRegressor()
         else: 
             self.base_estimator = base_estimator        
         self.n_estimators = n_estimators
