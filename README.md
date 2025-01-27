@@ -1,6 +1,6 @@
 # Genbooster
 
-A fast gradient boosting and bagging (RandomBagClassifier, similar to RandomForestClassifier) implementation using Rust and Python. Any base learner can be employed. Base learners input features are engineered using a randomized artificial neural network layer.
+A gradient boosting and bagging (RandomBagClassifier, similar to RandomForestClassifier) implementation using Rust and Python. Any base learner can be employed. Base learners input features are engineered using a randomized artificial neural network layer.
 
 For more details, see also [https://www.researchgate.net/publication/386212136_Scalable_Gradient_Boosting_using_Randomized_Neural_Networks](https://www.researchgate.net/publication/386212136_Scalable_Gradient_Boosting_using_Randomized_Neural_Networks).
 
