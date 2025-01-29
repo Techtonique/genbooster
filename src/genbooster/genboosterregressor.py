@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import Ridge
 from sklearn.tree import ExtraTreeRegressor
 from .rust_core import RustBooster as _RustBooster
+import random
 
 
 class BoosterRegressor(BaseEstimator, RegressorMixin):
@@ -87,18 +88,46 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
 
             self: The fitted boosting model.
         """        
-        if isinstance(X, pd.DataFrame):
-            X = X.values
-        if isinstance(y, pd.DataFrame):
-            y = y.values
-        scaled_X = self.scaler_.fit_transform(X)
-        self.y_mean_ = np.mean(y)
-        centered_y = y - self.y_mean_
+        # Set random seed if provided
+        if self.random_state is not None:
+            # Convert to int for Python's random.seed
+            seed_int = int(abs(self.random_state))
+            # Set Python RNG seeds
+            np.random.seed(seed_int)
+            random.seed(seed_int)
+            if hasattr(self.base_estimator, "random_state"):
+                self.base_estimator.random_state = seed_int
+            # Convert to u64 for Rust
+            seed = np.uint64(seed_int)
+        else:
+            # Use a random seed if none provided
+            seed_int = np.random.randint(0, 2**31 - 1)
+            np.random.seed(seed_int)
+            random.seed(seed_int)
+            seed = np.uint64(seed_int)
+            
+        # Convert to numpy arrays and ensure float64 dtype with C-contiguous memory layout
+        X = np.array(X, dtype=np.float64, copy=True, order='C')
+        y = np.array(y, dtype=np.float64, copy=True, order='C')
+        
+        # Scale X and force conversion to numpy array
+        scaled_X = np.array(self.scaler_.fit_transform(X), dtype=np.float64, copy=True, order='C')
+        
+        self.y_mean_ = float(np.mean(y))
+        centered_y = np.array(y - self.y_mean_, dtype=np.float64, copy=True, order='C')
+        
+        # Ensure y is 1D array
+        if centered_y.ndim == 2:
+            if centered_y.shape[1] != 1:
+                raise ValueError("y must have shape (n_samples,) or (n_samples, 1)")
+            centered_y = centered_y.ravel()  # Convert to 1D array
+            
         # Use Ridge as default base estimator if none provided
         if self.base_estimator is None:
             self.base_estimator_ = Ridge()
         else:
             self.base_estimator_ = self.base_estimator            
+            
         # Initialize Rust booster
         self.booster_ = _RustBooster(
             self.base_estimator_,
@@ -109,12 +138,13 @@ class BoosterRegressor(BaseEstimator, RegressorMixin):
             weights_distribution=self.weights_distribution,
             tolerance=self.tolerance
         )        
+        
         # Fit the model
         self.booster_.fit_boosting(
-            np.asarray(scaled_X, dtype=np.float64), 
-            np.asarray(centered_y, dtype=np.float64),
+            scaled_X,
+            centered_y,
             dropout=self.dropout,
-            seed=self.random_state if self.random_state is not None else 42
+            seed=seed
         )        
         return self
         

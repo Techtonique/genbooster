@@ -6,7 +6,8 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import Ridge
 from sklearn.tree import ExtraTreeRegressor
-from .rust_core import RustBooster as _RustBooster
+from utils import one_hot_encode2
+from .genboosterregressor import BoosterRegressor
 
 
 class BoosterClassifier(BaseEstimator, ClassifierMixin):
@@ -68,70 +69,45 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
         self.dropout = dropout
         self.tolerance = tolerance
         self.random_state = random_state        
-        self.boosters_ = None 
+        self.boosters_ = [] 
     
     def fit(self, X, y) -> "BoosterClassifier":
         """Fit the booster model.
         
         Parameters:
-
             X: Input data.
-
             y: Target data.
             
         Returns:
-
             self: The fitted boosting model.
         """
-        if isinstance(X, pd.DataFrame):
-            X = X.values
-        if isinstance(y, pd.DataFrame):
-            y = y.values        
-        y = np.asarray([int(x) for x in y]).ravel() 
-        Y = OneHotEncoder().fit_transform(y.reshape(-1, 1)).toarray()
+        # Get unique classes and one-hot encode
         self.classes_ = np.unique(y)
-        self.n_classes_ = len(self.classes_)
+        self.n_classes_ = len(self.classes_)        
+        Y = one_hot_encode2(y, self.n_classes_)
         
-        self.boosters_ = []
+        # Train one booster per class
         for i in range(self.n_classes_):
-            booster = _RustBooster(
-                self.base_estimator,
-                self.n_estimators,
-                self.learning_rate,
-                self.n_hidden_features,
-                self.direct_link,
+            booster = BoosterRegressor(
+                base_estimator=self.base_estimator,
+                n_estimators=self.n_estimators,
+                learning_rate=self.learning_rate,
+                n_hidden_features=self.n_hidden_features,
+                direct_link=self.direct_link,
                 weights_distribution=self.weights_distribution,
-                tolerance=self.tolerance
+                tolerance=self.tolerance, 
+                dropout=self.dropout, 
+                random_state=self.random_state
             )
-            # Try different shapes for y_i until one works
-            y_i = Y[:, i]
-            shapes_to_try = [
-                lambda y: y,                    # 1D array (n_samples,)
-                lambda y: y.reshape(-1, 1),     # 2D array (n_samples, 1)
-                lambda y: y.reshape(1, -1),     # 2D array (1, n_samples)
-                lambda y: y.reshape(-1),        # Flattened 1D
-                lambda y: np.expand_dims(y, 0), # Add dimension at start
-                lambda y: np.expand_dims(y, 1), # Add dimension at end
-            ]
             
-            success = False
-            errors = []
-            for shape_fn in shapes_to_try:
-                try:
-                    y_shaped = shape_fn(y_i)                    
-                    booster.fit_boosting(X.reshape(X.shape[0], -1), y_shaped, 
-                                       dropout=self.dropout, seed=self.random_state)
-                    success = True
-                    break
-                except (ValueError, TypeError) as e:
-                    errors.append(f"Shape {y_shaped.shape}: {str(e)}")
-                    continue
+            # Convert X and y to the right format without reshaping y
+            X_arr = np.asarray(X.values if hasattr(X, 'values') else X, dtype=np.float64)
+            y_arr = np.asarray(Y[:, i], dtype=np.float64)
             
-            if not success:
-                error_msg = "\n".join(errors)
-                raise ValueError(f"Could not fit booster with any target shape for class {i}. Errors:\n{error_msg}")
-                
-            self.boosters_.append(booster)            
+            # Fit the booster
+            booster.fit(X=X_arr, y=y_arr)
+            self.boosters_.append(booster)
+        
         return self
     
     def predict(self, X) -> np.ndarray:
@@ -163,7 +139,7 @@ class BoosterClassifier(BaseEstimator, ClassifierMixin):
         """
         if isinstance(X, pd.DataFrame):
             X = X.values
-        raw_preds = np.asarray([booster.predict_boosting(X) for booster in self.boosters_])
+        raw_preds = np.asarray([booster.predict(X) for booster in self.boosters_])
         shifted_preds = raw_preds - np.max(raw_preds, axis=0)
         exp_preds = np.exp(shifted_preds)
         return exp_preds / np.sum(exp_preds, axis=0)

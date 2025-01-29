@@ -36,4 +36,9 @@ class LinfaRegressor(BaseEstimator, RegressorMixin):
     def predict(self, X):
         if isinstance(X, pd.DataFrame):
             X = X.values
-        return self.model.predict(X)
+        X = np.asarray(X, dtype=np.float64)
+        predictions = self.model.predict(X)
+        # Ensure 1D output
+        if predictions.ndim == 2:
+            predictions = predictions.ravel()
+        return predictions

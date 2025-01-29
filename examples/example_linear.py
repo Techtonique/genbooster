@@ -26,6 +26,10 @@ y = df['target']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=142)
 
+print("X_train.shape", X_train.shape)
+print("y_train.shape", y_train.shape)
+print("X_train.dtypes", X_train.dtypes)
+print("y_train.dtypes", y_train.dtypes)
 
 regr = LinfaRegressor(model_name="LinearRegression")
 start = time()
@@ -33,7 +37,7 @@ regr.fit(X_train, y_train)
 end = time()
 print(f"Time taken: {end - start} seconds")
 rmse = np.sqrt(mean_squared_error(y_test, regr.predict(X_test)))
-print("\n\n BoosterRegressor RMSE", rmse)
+print("LinfaRegressor RMSE", rmse)
 
 regr = LinearRegression()
 start = time()
@@ -41,7 +45,7 @@ regr.fit(X_train, y_train)
 end = time()
 print(f"Time taken: {end - start} seconds")
 rmse = np.sqrt(mean_squared_error(y_test, regr.predict(X_test)))
-print("\n\n LinearRegression RMSE", rmse)
+print("LinearRegression RMSE", rmse)
 
 
 X, y = load_diabetes(return_X_y=True)
@@ -53,7 +57,7 @@ regr.fit(X_train, y_train)
 end = time()
 print(f"Time taken: {end - start} seconds")
 rmse = np.sqrt(mean_squared_error(y_test, regr.predict(X_test)))
-print("\n\n LinfaRegressor RMSE", rmse)
+print("LinfaRegressor RMSE", rmse)
 
 
 regr = LinearRegression()
@@ -62,19 +66,18 @@ regr.fit(X_train, y_train)
 end = time()
 print(f"Time taken: {end - start} seconds")
 rmse = np.sqrt(mean_squared_error(y_test, regr.predict(X_test)))
-print("\n\n LinearRegression RMSE", rmse)
+print("LinearRegression RMSE", rmse)
 
 
-datasets = [load_iris(return_X_y=True),
-            load_breast_cancer(return_X_y=True),
-            load_wine(return_X_y=True),
-            load_digits(return_X_y=True)]
-datasets_names = ['iris', 'breast_cancer', 'wine', 'digits']
+datasets = [load_iris(as_frame=True),
+            load_breast_cancer(as_frame=True),
+            load_wine(as_frame=True)]
+datasets_names = ['iris', 'breast_cancer', 'wine']
 
 # Booster
 for dataset, dataset_name in zip(datasets, datasets_names):
     print("\n data set ", dataset_name)
-    X, y = dataset
+    X, y = dataset.data, dataset.target
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     regr = BoosterClassifier(base_estimator=LinearRegression())
     start = time()
@@ -82,7 +85,19 @@ for dataset, dataset_name in zip(datasets, datasets_names):
     end = time()
     print(f"Time taken: {end - start} seconds")
     accuracy = regr.score(X_test, y_test)
-    print("BoosterClassifier Accuracy", accuracy)
+    print("BoosterClassifier LinearRegression Accuracy", accuracy)
+
+for dataset, dataset_name in zip(datasets, datasets_names):
+    print("\n data set ", dataset_name)
+    X, y = dataset.data, dataset.target
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    regr = BoosterClassifier(base_estimator=LinfaRegressor(model_name="LinearRegression"))
+    start = time()
+    regr.fit(X_train, y_train)
+    end = time()
+    print(f"Time taken: {end - start} seconds")
+    accuracy = regr.score(X_test, y_test)
+    print("BoosterClassifier LinfaRegressor Accuracy", accuracy)
 
 print("\n\n RandomBagRegressor boston dataset -----")
 url = "https://raw.githubusercontent.com/Techtonique/datasets/refs/heads/main/tabular/regression/boston_dataset2.csv"
@@ -105,7 +120,7 @@ print("RandomBagRegressor RMSE", rmse)
 
 for dataset, dataset_name in zip(datasets, datasets_names):
     print("\n data set ", dataset_name)
-    X, y = dataset
+    X, y = dataset.data, dataset.target
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     regr = RandomBagClassifier(base_estimator=LinearRegression())
     start = time()
@@ -113,4 +128,17 @@ for dataset, dataset_name in zip(datasets, datasets_names):
     end = time()
     print(f"Time taken: {end - start} seconds")
     accuracy = regr.score(X_test, y_test)
-    print("RandomBagClassifier Accuracy", accuracy)
+    print("RandomBagClassifier LinearRegression Accuracy", accuracy)
+
+
+for dataset, dataset_name in zip(datasets, datasets_names):
+    print("\n data set ", dataset_name)
+    X, y = dataset.data, dataset.target
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    regr = RandomBagClassifier(base_estimator=LinfaRegressor(model_name="LinearRegression"))
+    start = time()
+    regr.fit(X_train, y_train)
+    end = time()
+    print(f"Time taken: {end - start} seconds")
+    accuracy = regr.score(X_test, y_test)
+    print("RandomBagClassifier LinfaRegressor Accuracy", accuracy)
