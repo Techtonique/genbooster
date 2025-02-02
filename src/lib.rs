@@ -13,6 +13,9 @@ use linfa_pls::PlsRegression;
 use pyo3::exceptions::PyValueError;
 use linfa::Dataset;
 use linfa_linear::FittedLinearRegression;
+use rand_chacha::ChaCha20Rng;
+mod utils;
+use utils::create_rng;
 
 #[derive(Clone, Copy)]
 enum WeightsDistribution {
@@ -36,6 +39,7 @@ enum RegressionModel {
 fn rust_core(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Regressor>()?;
     m.add_class::<RustBooster>()?;
+    m.add_class::<AdaBoostRegressor>()?;
     Ok(())
 }
 
@@ -174,7 +178,7 @@ impl RustBooster {
         self.seed = seed;
         let x_array = unsafe { x.as_array() };
         let y_array = unsafe { y.as_array() };        
-        let mut rng = StdRng::seed_from_u64(seed);
+        let mut rng = create_rng(seed);
         let n_samples = x_array.shape()[0];
         let n_features = x_array.shape()[1];        
         
@@ -247,7 +251,7 @@ impl RustBooster {
         for (i, (w, base_learner)) in self.weights.iter().zip(self.base_learners.iter()).enumerate() {
             // Use stored weights directly
             let hidden = x_array.dot(w);
-            let mut hidden = hidden.mapv(|v| if v > 0.0 { v } else { 0.0 });            
+            let hidden = hidden.mapv(|v| if v > 0.0 { v } else { 0.0 });            
             // Direct link if specified
             let hidden = if self.direct_link {
                 ndarray::concatenate![Axis(1), x_array, hidden]
@@ -271,7 +275,7 @@ impl RustBooster {
         self.seed = seed;
         let x_array = unsafe { x.as_array() };
         let y_array = unsafe { y.as_array() };        
-        let mut rng = StdRng::seed_from_u64(seed);
+        let mut rng = create_rng(seed);
         let n_features = x_array.shape()[1];
         
         // First, create proper deep copies of base estimators
@@ -324,7 +328,7 @@ impl RustBooster {
         for (i, (w, base_learner)) in self.weights.iter().zip(self.base_learners.iter()).enumerate() {
             // Forward pass with stored weights
             let hidden = x_array.dot(w);
-            let mut hidden = hidden.mapv(|v| if v > 0.0 { v } else { 0.0 });
+            let hidden = hidden.mapv(|v| if v > 0.0 { v } else { 0.0 });
             
             // Direct link if specified
             let hidden = if self.direct_link {
@@ -374,7 +378,7 @@ impl RustBooster {
         dropout: f64,
         seed: u64,
     ) -> PyResult<Array2<f64>> {
-        let mut rng = StdRng::seed_from_u64(seed);
+        let mut rng = create_rng(seed);
         
         // Compute hidden layer
         let mut hidden = x.dot(w);
@@ -404,6 +408,218 @@ impl RustBooster {
             ));
             combined.slice_mut(s![.., ..x.shape()[1]]).assign(x);        // First part: original features
             combined.slice_mut(s![.., x.shape()[1]..]).assign(&hidden); // Second part: hidden features
+            Ok(combined)
+        } else {
+            Ok(hidden)
+        }
+    }
+}
+
+#[pyclass]
+struct AdaBoostRegressor {
+    base_learners: Vec<PyObject>,
+    alphas: Vec<f64>,
+    weights: Vec<Array2<f64>>,
+    learning_rate: f64,
+    n_estimators: i32,
+    n_hidden_features: i32,
+    direct_link: bool,
+    weights_distribution: WeightsDistribution,
+    tolerance: f64,
+    dropout: f64,
+    seed: u64,
+}
+
+#[pymethods]
+impl AdaBoostRegressor {
+    #[new]
+    fn new(
+        base_estimator: PyObject,
+        n_estimators: i32,
+        learning_rate: f64,
+        n_hidden_features: i32,
+        direct_link: bool,
+        weights_distribution: Option<&str>,
+        tolerance: Option<f64>,
+        dropout: Option<f64>,
+        seed: Option<u64>,
+    ) -> Self {
+        let weights_dist = match weights_distribution.unwrap_or("uniform") {
+            "normal" => WeightsDistribution::Normal,
+            _ => WeightsDistribution::Uniform,
+        };
+
+        AdaBoostRegressor {
+            base_learners: vec![base_estimator; n_estimators as usize],
+            alphas: Vec::new(),
+            weights: Vec::new(),
+            learning_rate,
+            n_estimators,
+            n_hidden_features,
+            direct_link,
+            weights_distribution: weights_dist,
+            tolerance: tolerance.unwrap_or(1e-4),
+            dropout: dropout.unwrap_or(0.0),
+            seed: seed.unwrap_or(42),
+        }
+    }
+
+    fn fit(&mut self, py: Python, x: &PyArray2<f64>, y: &PyArray1<f64>) -> PyResult<()> {
+        let x_array = unsafe { x.as_array() };
+        let y_array = unsafe { y.as_array() };
+        let n_samples = x_array.shape()[0];
+        let n_features = x_array.shape()[1];
+        
+        // Initialize RNG with seed
+        let mut rng = create_rng(self.seed);
+        
+        // Initialize sample weights
+        let mut sample_weights = Array1::ones(n_samples) / (n_samples as f64);
+        
+        // Get sklearn's clone function
+        let sklearn = py.import("sklearn.base")?;
+        let clone_fn = sklearn.getattr("clone")?;
+        
+        // Create deep copies for all base learners
+        for i in 0..self.n_estimators {
+            self.base_learners[i as usize] = clone_fn.call1((self.base_learners[i as usize].clone_ref(py),))?.into();
+        }
+        
+        // Calculate the range of target values for loss normalization
+        let y_max = y_array.iter().fold(f64::NEG_INFINITY, |a, &b| f64::max(a, b));
+        let y_min = y_array.iter().fold(f64::INFINITY, |a, &b| f64::min(a, b));
+        let y_range = y_max - y_min;
+        
+        for i in 0..self.n_estimators {
+            // Generate random weights for hidden layer
+            let mut w = Array2::zeros((n_features, self.n_hidden_features as usize));
+            for w_row in w.rows_mut() {
+                for w_val in w_row {
+                    *w_val = match self.weights_distribution {
+                        WeightsDistribution::Uniform => rng.gen::<f64>(),
+                        WeightsDistribution::Normal => rng.gen::<f64>(),
+                    };
+                }
+            }
+            self.weights.push(w.clone());
+            
+            // Forward pass with activation
+            let hidden = self.forward_pass(py, &x_array.to_owned(), &w, self.dropout, self.seed + i as u64)?;
+            
+            // Get current base learner
+            let base_learner = &self.base_learners[i as usize];
+            
+            // Fit the base learner with sample weights
+            let kwargs = PyDict::new(py);
+            kwargs.set_item("X", hidden.to_pyarray(py))?;
+            kwargs.set_item("y", y)?;
+            kwargs.set_item("sample_weight", sample_weights.to_pyarray(py))?;
+            base_learner.call_method(py, "fit", (), Some(kwargs))?;
+            
+            // Get predictions using transformed features
+            let pred_kwargs = PyDict::new(py);
+            pred_kwargs.set_item("X", hidden.to_pyarray(py))?;
+            let pred_result = base_learner.call_method(py, "predict", (), Some(pred_kwargs))?;
+            let predictions: &PyArray1<f64> = pred_result.extract(py)?;
+            let pred_array = unsafe { predictions.as_array() };
+            
+            // Calculate normalized errors (AdaBoost.R2)
+            let diff = &y_array.to_owned() - &pred_array.to_owned();
+            let loss = diff.mapv(|x| x.abs() / y_range);
+            let max_loss = loss.iter().fold(0.0f64, |a, &b| f64::max(a, b));
+            let normalized_loss = loss.mapv(|x| x / max_loss);
+            
+            // Calculate weighted error using zip
+            let error: f64 = normalized_loss.iter()
+                .zip(sample_weights.iter())
+                .map(|(&l, &w)| l * w)
+                .sum();
+            let error = error.max(1e-10).min(1.0 - 1e-10);
+            
+            // Calculate beta (different from classification AdaBoost)
+            let beta = error / (1.0 - error);
+            let alpha = self.learning_rate * beta.ln();
+            self.alphas.push(-alpha); // Note the negative sign
+            
+            // Update sample weights
+            let new_weights = normalized_loss.mapv(|l| beta.powf(1.0 - l));
+            sample_weights = &sample_weights * &new_weights;
+            let sum_weights: f64 = sample_weights.sum();
+            sample_weights = sample_weights.mapv(|w| w / sum_weights);
+            
+            // Store the fitted estimator
+            self.base_learners[i as usize] = base_learner.clone_ref(py);
+            
+            // Early stopping if error is too small
+            if error < self.tolerance {
+                self.n_estimators = i + 1;
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    fn predict(&self, py: Python, x: &PyArray2<f64>) -> PyResult<Py<PyArray1<f64>>> {
+        let x_array = unsafe { x.as_array() };
+        let n_samples = x_array.shape()[0];
+        let mut predictions = Array1::zeros(n_samples);
+        let sum_alphas: f64 = self.alphas.iter().sum();
+        
+        for ((base_learner, &alpha), w) in self.base_learners.iter()
+            .zip(self.alphas.iter())
+            .zip(self.weights.iter()) {
+            
+            let hidden = self.forward_pass(py, &x_array.to_owned(), w, 0.0, self.seed)?;
+            
+            let pred_kwargs = PyDict::new(py);
+            pred_kwargs.set_item("X", hidden.to_pyarray(py))?;
+            let pred_result = base_learner.call_method(py, "predict", (), Some(pred_kwargs))?;
+            let pred: &PyArray1<f64> = pred_result.extract(py)?;
+            let pred_array = unsafe { pred.as_array() };
+            
+            // Convert view to owned array and perform operations
+            let pred_owned = pred_array.to_owned();
+            predictions = predictions + (alpha * pred_owned);
+        }
+        
+        // Normalize by sum of alphas
+        predictions = predictions.mapv(|x| x / sum_alphas);
+        
+        Ok(predictions.to_pyarray(py).to_owned())
+    }
+}
+
+impl AdaBoostRegressor {
+    fn forward_pass(
+        &self,
+        py: Python,
+        x: &Array2<f64>,
+        w: &Array2<f64>,
+        dropout: f64,
+        seed: u64,
+    ) -> PyResult<Array2<f64>> {
+        let mut rng = create_rng(seed);
+        
+        // Compute hidden layer
+        let mut hidden = x.dot(w);
+        
+        // Apply ReLU activation
+        hidden.mapv_inplace(|v| if v > 0.0 { v } else { 0.0 });
+        
+        // Apply dropout if specified
+        if dropout > 0.0 {
+            for val in hidden.iter_mut() {
+                if rng.gen::<f64>() < dropout {
+                    *val = 0.0;
+                } else {
+                    *val /= 1.0 - dropout;
+                }
+            }
+        }
+        
+        // If direct_link is true, concatenate x and hidden horizontally
+        if self.direct_link {
+            let combined = ndarray::concatenate![Axis(1), x.to_owned(), hidden];
             Ok(combined)
         } else {
             Ok(hidden)
