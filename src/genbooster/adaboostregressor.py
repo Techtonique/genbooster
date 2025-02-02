@@ -4,7 +4,13 @@ import pandas as pd
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import ExtraTreeRegressor
-from .rust_core import AdaBoostRegressor as _AdaBoostRegressor
+try:
+    from .rust_core import AdaBoostRegressor as _AdaBoostRegressor
+except ImportError:
+    # Fallback for documentation generation
+    class _AdaBoostRegressor:
+        """Rust implementation of AdaBoostRegressor."""
+        pass
 
 class AdaBoostRegressor(BaseEstimator, RegressorMixin):
     """AdaBoost Regressor with neural network-like feature transformation.
