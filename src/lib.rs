@@ -14,8 +14,8 @@ use pyo3::exceptions::PyValueError;
 use linfa::Dataset;
 use linfa_linear::FittedLinearRegression;
 use rand_chacha::ChaCha20Rng;
-mod utils;
-use utils::create_rng;
+mod rust_utils;
+use rust_utils::create_rng;
 
 #[derive(Clone, Copy)]
 enum WeightsDistribution {

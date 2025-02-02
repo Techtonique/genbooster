@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import ExtraTreeRegressor
-from .utils import one_hot_encode2
+from utils import one_hot_encode2
 from .adaboostregressor import AdaBoostRegressor
 
 
