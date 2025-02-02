@@ -50,70 +50,40 @@ class AdaBoostRegressor(BaseEstimator, RegressorMixin):
         self.scaler_ = StandardScaler()
 
     def fit(self, X, y) -> "AdaBoostRegressor":
-        """Fit the AdaBoost model.
+        """Fit the AdaBoost regressor.
         
         Parameters:
-            X: Input data.
-            y: Target data.
-            
-        Returns:
-            self: The fitted boosting model.
+            X: Input data
+            y: Target values
         """
-        # Set random seed if provided
-        if self.random_state is not None:
-            # Convert to int for Python's random.seed
-            seed_int = int(abs(self.random_state))
-            # Set Python RNG seeds
-            np.random.seed(seed_int)
-            if hasattr(self.base_estimator, "random_state"):
-                self.base_estimator.random_state = seed_int
-            # Convert to u64 for Rust
-            seed = np.uint64(seed_int)
-        else:
-            # Use a random seed if none provided
-            seed_int = np.random.randint(0, 2**31 - 1)
-            seed = np.uint64(seed_int)
-            
-        # Convert to numpy arrays
-        if isinstance(X, pd.DataFrame):
-            X = X.values
-        if isinstance(y, pd.DataFrame):
-            y = y.values
-            
-        X = np.array(X, dtype=np.float64, copy=True, order='C')
-        y = np.array(y, dtype=np.float64, copy=True, order='C')
+        # Convert inputs to numpy arrays
+        X_arr = np.asarray(X.values if hasattr(X, 'values') else X, dtype=np.float64)
+        y_arr = np.asarray(y, dtype=np.float64)
         
-        # Scale features
-        scaled_X = np.array(self.scaler_.fit_transform(X), dtype=np.float64, copy=True, order='C')
+        # Fit and transform with StandardScaler
+        self.scaler_ = StandardScaler()
+        X_scaled = self.scaler_.fit_transform(X_arr)
         
-        # Ensure y is 1D array
-        if y.ndim == 2:
-            if y.shape[1] != 1:
-                raise ValueError("y must have shape (n_samples,) or (n_samples, 1)")
-            y = y.ravel()
-        
-        # Use ExtraTreesRegressor as default base estimator if none provided
+        # Initialize base estimator if None
         if self.base_estimator is None:
-            self.base_estimator_ = ExtraTreeRegressor()
+            self.base_estimator_ = ExtraTreeRegressor(random_state=self.random_state)
         else:
             self.base_estimator_ = self.base_estimator
-            
-        # Initialize Rust booster
+        
+        # Create and fit the booster
         self.booster_ = _AdaBoostRegressor(
-            self.base_estimator_,
-            self.n_estimators,
-            self.learning_rate,
-            self.n_hidden_features,
-            self.direct_link,
+            base_estimator=self.base_estimator_,
+            n_estimators=self.n_estimators,
+            learning_rate=self.learning_rate,
+            n_hidden_features=self.n_hidden_features,
+            direct_link=self.direct_link,
             weights_distribution=self.weights_distribution,
             dropout=self.dropout,
             tolerance=self.tolerance,
-            seed=seed
+            random_state=self.random_state
         )
         
-        # Fit the model
-        self.booster_.fit(scaled_X, y)
-        
+        self.booster_.fit(X_scaled, y_arr)
         return self
 
     def predict(self, X) -> np.ndarray:

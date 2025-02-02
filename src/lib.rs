@@ -416,7 +416,7 @@ impl RustBooster {
 }
 
 #[pyclass]
-struct AdaBoostRegressor {
+pub struct AdaBoostRegressor {
     base_learners: Vec<PyObject>,
     alphas: Vec<f64>,
     weights: Vec<Array2<f64>>,
@@ -439,16 +439,17 @@ impl AdaBoostRegressor {
         learning_rate: f64,
         n_hidden_features: i32,
         direct_link: bool,
-        weights_distribution: Option<&str>,
-        tolerance: Option<f64>,
-        dropout: Option<f64>,
-        seed: Option<u64>,
+        weights_distribution: String,
+        dropout: f64,
+        tolerance: f64,
+        random_state: Option<i64>,
     ) -> Self {
-        let weights_dist = match weights_distribution.unwrap_or("uniform") {
+        let seed = random_state.unwrap_or(42) as u64;
+        let weights_dist = match weights_distribution.as_str() {
             "normal" => WeightsDistribution::Normal,
             _ => WeightsDistribution::Uniform,
         };
-
+        
         AdaBoostRegressor {
             base_learners: vec![base_estimator; n_estimators as usize],
             alphas: Vec::new(),
@@ -458,9 +459,9 @@ impl AdaBoostRegressor {
             n_hidden_features,
             direct_link,
             weights_distribution: weights_dist,
-            tolerance: tolerance.unwrap_or(1e-4),
-            dropout: dropout.unwrap_or(0.0),
-            seed: seed.unwrap_or(42),
+            tolerance,
+            dropout,
+            seed,
         }
     }
 
