@@ -12,19 +12,31 @@ class AdaBoostClassifier(BaseEstimator, ClassifierMixin):
     """AdaBoost Classifier using AdaBoostRegressor as a multi-task learner.
     
     Parameters:
+
         base_estimator: Base learner to use for the booster. Default is ExtraTreeRegressor.
+
         n_estimators: Number of boosting stages to perform.
+
         learning_rate: Learning rate shrinks the contribution of each estimator.
+
         n_hidden_features: Number of hidden features to use for the base learner.
+
         direct_link: Whether to use direct link for the base learner or not.
+
         weights_distribution: Distribution of the weights for the booster (uniform or normal).
+
         dropout: Dropout rate.
+
         tolerance: Tolerance for early stopping.
+
         random_state: Random state.
         
     Attributes:
+
         classes_: The classes labels.
+
         n_classes_: The number of classes.
+
         boosters_: List of AdaBoostRegressor instances, one per class.
     """
     
@@ -55,10 +67,13 @@ class AdaBoostClassifier(BaseEstimator, ClassifierMixin):
         """Fit the AdaBoost classifier.
         
         Parameters:
+
             X: Input data.
+
             y: Target data.
             
         Returns:
+        
             self: The fitted boosting model.
         """
         # Get unique classes and one-hot encode

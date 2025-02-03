@@ -44,18 +44,19 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
+          name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
           path: dist
 
   publish:
-    needs: [build]  # Make this optional
-    if: always()    # Run even if build is skipped
+    needs: [build]
+    if: always()
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: wheels
+          pattern: wheels-*
+          merge-multiple: true
           path: dist
 
       - name: Publish to PyPI

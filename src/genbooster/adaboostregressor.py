@@ -16,19 +16,31 @@ class AdaBoostRegressor(BaseEstimator, RegressorMixin):
     """AdaBoost Regressor with neural network-like feature transformation.
     
     Parameters:
+
         base_estimator: Base learner to use for the booster.
+
         n_estimators: Number of boosting stages to perform.
+
         learning_rate: Learning rate shrinks the contribution of each estimator.
+
         n_hidden_features: Number of hidden features to use for the base learner.
+
         direct_link: Whether to use direct link for the base learner or not.
+
         weights_distribution: Distribution of the weights for the booster (uniform or normal).
+
         dropout: Dropout rate.
+
         tolerance: Tolerance for early stopping.
+
         random_state: Random state.
         
     Attributes:
+
         base_estimator_: The base learner.
+
         booster_: The boosting model.
+
         scaler_: StandardScaler for feature scaling.
     """
     
@@ -59,7 +71,9 @@ class AdaBoostRegressor(BaseEstimator, RegressorMixin):
         """Fit the AdaBoost regressor.
         
         Parameters:
+
             X: Input data
+            
             y: Target values
         """
         # Convert inputs to numpy arrays
@@ -96,9 +110,11 @@ class AdaBoostRegressor(BaseEstimator, RegressorMixin):
         """Make predictions with the AdaBoost model.
         
         Parameters:
+
             X: Input data.
             
         Returns:
+
             predictions: Model predictions.
         """
         if isinstance(X, pd.DataFrame):
