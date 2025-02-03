@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "genbooster"
-version = "0.6.0"
+version = "0.6.1"
 description = "A fast boosting implementation using Rust and Python"
 requires-python = ">=3.7"
 authors = [
