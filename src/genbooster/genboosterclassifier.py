@@ -6,7 +6,7 @@ from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import Ridge
 from sklearn.tree import ExtraTreeRegressor
-from utils import one_hot_encode2
+from ..pythonutils import one_hot_encode2
 from .genboosterregressor import BoosterRegressor
 
 
