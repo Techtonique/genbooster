@@ -2,7 +2,7 @@
 
 A gradient boosting and bagging (RandomBagClassifier, similar to RandomForestClassifier) implementation using Rust and Python. Any base learner can be employed. Base learners input features are engineered using a randomized artificial neural network layer.
 
-For more details, see also [https://www.researchgate.net/publication/386212136_Scalable_Gradient_Boosting_using_Randomized_Neural_Networks](https://www.researchgate.net/publication/386212136_Scalable_Gradient_Boosting_using_Randomized_Neural_Networks).
+For more details, see also [https://www.researchgate.net/publication/386212136_Scalable_Gradient_Boosting_using_Randomized_Neural_Networks](https://www.researchgate.net/publication/386212136_Scalable_Gradient_Boosting_using_Randomized_Neural_Networks) or [https://thierrymoudiki.github.io/blog/2025/06/14/python/xgboost-default-overfitting](https://thierrymoudiki.github.io/blog/2025/06/14/python/xgboost-default-overfitting)
 
 ![PyPI](https://img.shields.io/pypi/v/genbooster) 
 [![Downloads](https://pepy.tech/badge/genbooster)](https://pepy.tech/project/genbooster) 
