@@ -10,10 +10,6 @@ For more details, see also [https://www.researchgate.net/publication/386212136_S
 
 ## 1 - Installation
 
-From PyPI:
-```bash
-pip install genbooster
-```
 From GitHub:
 ```bash
 pip install git+https://github.com/Techtonique/genbooster.git
