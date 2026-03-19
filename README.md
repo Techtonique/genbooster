@@ -15,7 +15,7 @@ From GitHub:
 pip install git+https://github.com/Techtonique/genbooster.git
 ```
 
-It might be required to install Rust and Cargo first (**normally, it isn't, and you can skip this step**): 
+It might be required to install Rust and Cargo first (**normally, it isn't, and you can skip these steps**): 
 
 Command line:
 ```bash
